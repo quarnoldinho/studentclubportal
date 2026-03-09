@@ -9,7 +9,7 @@ const phone = document.getElementById("phone");
 const memberTableBody = document.getElementById("memberTableBody");
 const jsonOutput = document.getElementById("jsonOutput");
 const messageBox = document.getElementById("messageBox");
-const clearBtn = document.getElementById("clearBtn");
+const clearBgitn = document.getElementById("clearBtn");
 
 function getMembers() {
   let members = localStorage.getItem("members");
