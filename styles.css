@@ -119,6 +119,13 @@ section h2 {
     color: var(--psu-blue);
 }
 
+section p {
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    color: var(--psu-light);
+}
+
 .text-box {
     max-width: 700px;
     margin: 0 auto;
