@@ -6,7 +6,6 @@ $(document).ready(function() {
     $.getJSON('events.json', function(data) {
         events = data
         displayEvents(events)
-        console.log('Events loaded:', events)
     });
 });
 

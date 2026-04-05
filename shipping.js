@@ -41,8 +41,6 @@ document.getElementById("shippingForm").addEventListener("submit", function(e) {
       method
     };
 
-    console.log("Shipping JSON:", shippingData);
-
     alert("Shipping info saved!");
   }
 });
