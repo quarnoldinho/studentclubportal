@@ -50,10 +50,11 @@ document.getElementById("shippingForm").addEventListener("submit", function(e) {
 .then(response => response.json())
 .then(data => {
   console.log("Success:", data);
+  alert("Shipping info saved!");
+  window.location.href = "billing.html";
 })
 .catch(error => {
   console.error("Error:", error);
 });
-    alert("Shipping info saved!");
   }
 });
