@@ -25,7 +25,18 @@ const events = [
     }
 ]
 
+const cartStorageKey = 'studentClubCart'
 let cart = []
+
+function loadCart() {
+    const savedCart = localStorage.getItem(cartStorageKey)
+    cart = savedCart ? JSON.parse(savedCart) : []
+    updateCartDisplay()
+}
+
+function saveCart() {
+    localStorage.setItem(cartStorageKey, JSON.stringify(cart))
+}
 
 function displayEvents(eventsToShow) {
     const eventList = $('#eventList')
@@ -64,11 +75,13 @@ function addToCart(eventItem) {
     } else {
         cart.push({ ...eventItem, quantity: 1 })
     }
+    saveCart()
     updateCartDisplay()
 }
 
 $(document).ready(function() {
     displayEvents(events)
+    loadCart()
 
     $(document).on('click', '.add-to-cart', function() {
         const eventId = $(this).data('id')
