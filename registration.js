@@ -1,147 +1,184 @@
-let editIndex = -1;
+﻿let editIndex = -1;
+const API_URL = 'http://localhost:3000/api/members'; // Node.js/Express backend endpoint
 
 const memberForm = document.getElementById("memberForm");
-const memberName = document.getElementById("memberName");
-const email = document.getElementById("email");
-const yearLevel = document.getElementById("yearLevel");
-const organization = document.getElementById("organization");
-const phone = document.getElementById("phone");
+const messageBox = document.getElementById("messageBox");
 const memberTableBody = document.getElementById("memberTableBody");
 const jsonOutput = document.getElementById("jsonOutput");
-const messageBox = document.getElementById("messageBox");
 const clearBtn = document.getElementById("clearBtn");
 
+// All form field IDs
+const fieldIds = [
+  "memberName", "email", "yearLevel", "organization", 
+  "studentId", "major", "clubRole", "phone", 
+  "interests", "availability"
+];
+
+// Required fields
+const requiredFields = ["memberName", "email", "yearLevel", "organization"];
+
 function getMembers() {
-  let members = localStorage.getItem("members");
+  let members = localStorage.getItem("studentClubMembers");
   return members ? JSON.parse(members) : [];
 }
 
 function saveMembers(members) {
-  localStorage.setItem("members", JSON.stringify(members));
+  localStorage.setItem("studentClubMembers", JSON.stringify(members));
+  updateJsonPreview();
 }
 
-function showMessage(text, type) {
-  messageBox.innerHTML = `
-    <div class="alert alert-${type}" role="alert">
-      ${text}
-    </div>
-  `;
-}
-
-function clearValidation() {
-  memberName.classList.remove("is-invalid");
-  email.classList.remove("is-invalid");
-  yearLevel.classList.remove("is-invalid");
-  organization.classList.remove("is-invalid");
-}
-
-function validEmail(emailText) {
-  return emailText.includes("@") && emailText.includes(".");
+function getFormData() {
+  const data = {};
+  fieldIds.forEach(id => {
+    data[id] = document.getElementById(id).value.trim();
+  });
+  data.submittedAt = new Date().toISOString();
+  return data;
 }
 
 function validateForm() {
   let isValid = true;
-  clearValidation();
+  clearValidationStyles();
 
-  if (memberName.value.trim() === "") {
-    memberName.classList.add("is-invalid");
+  requiredFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field.value.trim() === "") {
+      field.classList.add("is-invalid");
+      isValid = false;
+    }
+  });
+
+  const emailField = document.getElementById("email");
+  if (!validEmail(emailField.value.trim())) {
+    emailField.classList.add("is-invalid");
     isValid = false;
   }
 
-  if (email.value.trim() === "" || !validEmail(email.value.trim())) {
-    email.classList.add("is-invalid");
-    isValid = false;
-  }
-
-  if (yearLevel.value.trim() === "") {
-    yearLevel.classList.add("is-invalid");
-    isValid = false;
-  }
-
-  if (organization.value.trim() === "") {
-    organization.classList.add("is-invalid");
+  const phoneField = document.getElementById("phone");
+  const phoneValue = phoneField.value.trim();
+  if (phoneValue && !/^\+?[0-9\-() ]{7,20}$/.test(phoneValue)) {
+    phoneField.classList.add("is-invalid");
     isValid = false;
   }
 
   return isValid;
 }
 
+function validEmail(emailText) {
+  return /^\S+@\S+\.\S+$/.test(emailText);
+}
+
+function clearValidationStyles() {
+  fieldIds.forEach(id => {
+    document.getElementById(id).classList.remove("is-invalid");
+  });
+}
+
+function showMessage(text, type) {
+  messageBox.innerHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${text}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  `;
+}
+
+function updateJsonPreview() {
+  const members = getMembers();
+  jsonOutput.textContent = JSON.stringify(members, null, 2);
+}
+
 function renderMembers() {
-  let members = getMembers();
+  const members = getMembers();
   memberTableBody.innerHTML = "";
 
   if (members.length === 0) {
     memberTableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center">No members registered yet.</td>
+        <td colspan="6" class="text-center py-4">No members registered yet.</td>
       </tr>
     `;
   } else {
-    for (let i = 0; i < members.length; i++) {
-      memberTableBody.innerHTML += `
-        <tr>
-          <td>${members[i].memberName}</td>
-          <td>${members[i].email}</td>
-          <td>${members[i].yearLevel}</td>
-          <td>${members[i].organization}</td>
-          <td>${members[i].phone || ""}</td>
-          <td>
-            <button class="btn btn-sm btn-warning me-1" onclick="editMember(${i})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteMember(${i})">Delete</button>
-          </td>
-        </tr>
+    members.forEach((member, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${member.memberName}</td>
+        <td>${member.email}</td>
+        <td>${member.yearLevel}</td>
+        <td>${member.clubRole}</td>
+        <td>${member.phone || "-"}</td>
+        <td>
+          <button class="btn btn-sm btn-warning me-1" onclick="editMember(${index})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteMember(${index})">Delete</button>
+        </td>
       `;
-    }
+      memberTableBody.appendChild(row);
+    });
   }
-
-  jsonOutput.textContent = JSON.stringify(members, null, 2);
 }
 
 function editMember(index) {
-  let members = getMembers();
-  let member = members[index];
+  const members = getMembers();
+  const member = members[index];
 
-  memberName.value = member.memberName;
-  email.value = member.email;
-  yearLevel.value = member.yearLevel;
-  organization.value = member.organization;
-  phone.value = member.phone;
+  fieldIds.forEach(id => {
+    const field = document.getElementById(id);
+    field.value = member[id] || "";
+  });
 
   editIndex = index;
   showMessage("Member loaded for editing.", "info");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteMember(index) {
-  let members = getMembers();
-  members.splice(index, 1);
-  saveMembers(members);
-  renderMembers();
-  showMessage("Member deleted successfully.", "danger");
+  if (confirm("Are you sure you want to delete this member?")) {
+    const members = getMembers();
+    members.splice(index, 1);
+    saveMembers(members);
+    renderMembers();
+    showMessage("Member deleted successfully.", "warning");
+  }
 }
 
 function resetForm() {
   memberForm.reset();
   editIndex = -1;
-  clearValidation();
+  clearValidationStyles();
+  messageBox.innerHTML = "";
 }
 
-memberForm.addEventListener("submit", function (e) {
+async function sendToServer(memberData) {
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(memberData)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    showMessage("Member saved and sent to server successfully.", "success");
+  } catch (error) {
+    console.error("AJAX POST failed:", error);
+    showMessage(`Saved locally. Server POST failed: ${error.message}`, "danger");
+  }
+}
+
+memberForm.addEventListener("submit", async function (e) {
   e.preventDefault();
 
   if (!validateForm()) {
-    showMessage("Please fill in all required fields correctly.", "danger");
+    showMessage("Please fix the errors in red and try again.", "danger");
     return;
   }
 
-  let members = getMembers();
-
-  let memberData = {
-    memberName: memberName.value.trim(),
-    email: email.value.trim(),
-    yearLevel: yearLevel.value.trim(),
-    organization: organization.value.trim(),
-    phone: phone.value.trim()
-  };
+  const memberData = getFormData();
+  const members = getMembers();
 
   if (editIndex === -1) {
     members.push(memberData);
@@ -155,11 +192,14 @@ memberForm.addEventListener("submit", function (e) {
   saveMembers(members);
   renderMembers();
   resetForm();
+
+  // Send to server
+  await sendToServer(memberData);
 });
 
 clearBtn.addEventListener("click", function () {
   resetForm();
-  messageBox.innerHTML = "";
 });
 
+// Initial render
 renderMembers();
